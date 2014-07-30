@@ -19,12 +19,14 @@ if DATABASE == :Orient
   PATH_PREFIX = "#{ORIENT_BIN_PATH}/"
 elsif DATABASE == :Postgres
   PATH_PREFIX = ''
+elsif DATABASE == :Neo4j
+  PATH_PREFIX = ''
 end
 
 QUERY_TO_RANGE = {
   1 => (1..200),
   2 => (1..18),
-  3 => (1..99),
+  3 => (1..200),
   4 => (1..8)
 }
 
@@ -37,6 +39,8 @@ def query_1(team_number)
     "SELECT EXPAND(out()) FROM (SELECT * FROM Tag WHERE name = \"Team #{team_number}\")"
   when :Postgres
     "SELECT * FROM tags where id IN (SELECT tag_relationships.child_id FROM tag_relationships WHERE parent_id = (SELECT tags.id FROM tags where name = 'Team #{team_number}'));"
+  when :Neo4j
+    "MATCH (t:Team {name: 'Team #{team_number}'})--(p:Player) RETURN p;"
   end
 end
 
@@ -47,6 +51,8 @@ def query_2(league_number)
     "SELECT FROM (TRAVERSE * FROM (SELECT * FROM Tag WHERE name = \"League #{league_number}\") WHILE $depth <=3) WHERE type = \"Player\" LIMIT 100"
   when :Postgres
     "SELECT * FROM tags WHERE id IN (SELECT tag_relationships.child_id FROM tag_relationships WHERE parent_id IN (SELECT tags.id FROM tags WHERE tags.id IN (SELECT tag_relationships.child_id FROM tag_relationships WHERE parent_id IN (SELECT tags.id FROM tags WHERE id IN (SELECT tag_relationships.child_id FROM tag_relationships WHERE parent_id = (SELECT tags.id FROM tags WHERE name = 'League #{league_number}'))))));"
+  when :Neo4j
+    "MATCH (t:Team {name: 'Team #{team_number}'})--(p:Player) RETURN p;"
   end
 end
 
@@ -94,24 +100,23 @@ end
 
 ### EXECUTE QUERIES AND PARSE THE RESULTS
 
-(1..4).each do |query_number|
-  case DATABASE
-  when :Postgres
-    total_time = `psql -p #{POSTGRES_PORT} < #{DATABASE}_query_#{query_number} > #{DATABASE}_query_#{query_number}_result; cat #{DATABASE}_query_#{query_number}_result | grep 'Time: ' | awk '{print $2}' | awk '{s+=$1} END {print s}'`.chomp.to_f
-  when :Orient
-    total_time = `cd #{ORIENT_BIN_PATH}; ./console.sh #{DATABASE}_query_#{query_number} > #{DATABASE}_query_#{query_number}_result; cat #{DATABASE}_query_#{query_number}_result | grep 'executed in' | awk '{print $7}' | awk '{s+=$1} END {print s}'`.chomp.to_f
-  end
-  num_of_trials = QUERY_TO_RANGE[query_number].count
-  average_time = total_time / num_of_trials.to_f
-  if DATABASE == :Orient
-    time_unit = 'secs'
-  elsif DATABASE == :Postgres
-    time_unit = 'millisecs'
-  end
+# (1..4).each do |query_number|
+#   case DATABASE
+#   when :Postgres
+#     total_time = `psql -p #{POSTGRES_PORT} < #{DATABASE}_query_#{query_number} > #{DATABASE}_query_#{query_number}_result; cat #{DATABASE}_query_#{query_number}_result | grep 'Time: ' | awk '{print $2}' | awk '{s+=$1} END {print s}'`.chomp.to_f
+#   when :Orient
+#     total_time = `cd #{ORIENT_BIN_PATH}; ./console.sh #{DATABASE}_query_#{query_number} > #{DATABASE}_query_#{query_number}_result; cat #{DATABASE}_query_#{query_number}_result | grep 'executed in' | awk '{print $7}' | awk '{s+=$1} END {print s}'`.chomp.to_f
+#   end
+#   num_of_trials = QUERY_TO_RANGE[query_number].count
+#   average_time = total_time / num_of_trials.to_f
+#   if DATABASE == :Orient
+#     time_unit = 'secs'
+#   elsif DATABASE == :Postgres
+#     time_unit = 'millisecs'
+#   end
 
-  `rm #{DATABASE}_query_#{query_number}`
-  `rm #{DATABASE}_query_#{query_number}_result` unless KEEP_QUERY_RESULTS_FOR_DEBUGGING
+#   `rm #{DATABASE}_query_#{query_number}`
+#   `rm #{DATABASE}_query_#{query_number}_result` unless KEEP_QUERY_RESULTS_FOR_DEBUGGING
 
-  puts "#{DATABASE} Query #{query_number} took an average of #{average_time.round(5)} #{time_unit} over #{num_of_trials} trials" 
-end
-
+#   puts "#{DATABASE} Query #{query_number} took an average of #{average_time.round(5)} #{time_unit} over #{num_of_trials} trials" 
+# end

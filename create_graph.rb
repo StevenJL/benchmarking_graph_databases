@@ -2,10 +2,15 @@
 
 ######## PARAMS
 
+# 1) Choose your database
 # DATABASE = :Orient
-DATABASE = :Postgres
+# DATABASE = :Postgres
+DATABASE = :Neo4j
+
+# Postgres Params
 POSTGRES_PORT = '5432'
 
+# Orient Params
 ORIENT_PATH = '/Users/stevenli/releases/orientdb'
 ORIENT_BIN_PATH = "#{ORIENT_PATH}/bin"
 ORIENT_DATABASE_PATH = "local:#{ORIENT_PATH}/databases/tags"
@@ -13,6 +18,8 @@ ORIENT_DATABASE_PATH = "local:#{ORIENT_PATH}/databases/tags"
 if DATABASE == :Orient
   FILENAME = "ORIENT_BIN_PATH/#{DATABASE}_tag_inserts"
 elsif DATABASE == :Postgres
+  FILENAME = "#{DATABASE}_tag_inserts"
+elsif DATABASE == :Neo4j
   FILENAME = "#{DATABASE}_tag_inserts"
 end
 
@@ -51,6 +58,8 @@ def create_vertex(klass, name, type, options={})
     "create vertex #{klass} content {name: \"#{name}\", type: \"#{type}\"}"
   when :Postgres
     "INSERT INTO tags (id, name, type) VALUES ('#{Counter.inc}', '#{name}', '#{type}');"
+  when :Neo4j
+    "CREATE (type:#{type} { name: '#{name}' });"
   end
 end
 
@@ -60,6 +69,8 @@ def create_edge(name1, name2, options={})
     "create edge from (select from Tag where name = \"#{name1}\") to (select from Tag where name = \"#{name2}\")"
   when :Postgres
     "INSERT INTO tag_relationships (parent_id, child_id) VALUES ((SELECT tags.id FROM tags where name = '#{name1}'), (SELECT tags.id FROM tags where name = '#{name2}'));"
+  when :Neo4j
+    "MATCH (x), (y) WHERE x.name = '#{name1}' AND y.name = '#{name2}' CREATE (x)-[r:Parent]->(y);"
   end
 end
 
@@ -115,6 +126,8 @@ when :Orient
   `./console.sh #{FILENAME}`
 when :Postgres
   `psql -p #{POSTGRES_PORT} < #{FILENAME}`
+when :Neo4j
+  `neo4j-shell < #{FILENAME}`
 end
 
 `rm #{FILENAME}`
