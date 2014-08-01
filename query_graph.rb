@@ -2,12 +2,16 @@
 
 require 'pry'
 
-##### PARAMS
+#### ARGS
+
+DATABASE = ARGV[0].to_sym
+
+
 
 # Select a database
-# DATABASE = :Orient
+DATABASE = :Orient
 # DATABASE = :Postgres
-DATABASE = :Neo4j
+# DATABASE = :Neo4j
 
 # POSTGRES
 POSTGRES_PORT = '5432'
@@ -76,7 +80,7 @@ end
 def query_4(group_number)
   case DATABASE
   when :Orient
-    "TRAVERSE * FROM (SELECT * FROM Tag WHERE name = \"Group #{group_number}\") WHILE $depth <=1 LIMIT 200;"
+    "SELECT EXPAND(out()) FROM (SELECT * FROM Tag WHERE name = \"Group #{group_number}\")"
   when :Postgres
     "SELECT * FROM tags WHERE id IN (SELECT tag_relationships.child_id FROM tag_relationships WHERE parent_id = (SELECT tags.id FROM tags WHERE name = 'Group #{group_number}'));"
   when :Neo4j
@@ -134,3 +138,4 @@ end
 
   puts "#{DATABASE} Query #{query_number} took an average of #{average_time.round(5)} #{time_unit} over #{num_of_trials} trials" 
 end
+
