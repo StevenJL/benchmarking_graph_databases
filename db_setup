@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+require 'pry'
+
+# Parse command-line argument
+DATABASE = ARGV[0].to_sym
+
+DROP_FIRST = ARGV.include?('drop=true')
+
+# Set Params
+require './lib/set_params'
+
+# Commands to set up database
+setup_commands = []
+commands_filename = "#{ORIENT_BIN_PATH}/#{DATABASE}_setup_commands"
+
+case DATABASE
+when :Orient
+  setup_commands << "drop database local:#{ORIENT_DATABASE_PATH} admin admin" if DROP_FIRST
+  setup_commands << "create database local:#{ORIENT_DATABASE_PATH} admin admin local"
+  setup_commands << "connect local:#{ORIENT_DATABASE_PATH} admin admin"
+  setup_commands << "create class Tag extends V"
+  setup_commands << "create property Tag.name string"
+  setup_commands << "create property Tag.type string"
+  setup_commands << "exit"
+when :Postgres
+when :Neo4j
+end
+
+`touch #{commands_filename}`
+
+File.open(commands_filename, 'a') do |file|
+  setup_commands.each do |cmd|
+    file.puts cmd
+  end
+end
+
+`#{ORIENT_BIN_PATH}/console.sh < #{commands_filename}`
+
+`rm #{commands_filename}`

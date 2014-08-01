@@ -6,8 +6,6 @@ require 'pry'
 
 DATABASE = ARGV[0].to_sym
 
-
-
 # Select a database
 DATABASE = :Orient
 # DATABASE = :Postgres
