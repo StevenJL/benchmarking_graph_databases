@@ -1,45 +1,42 @@
 #!/usr/bin/env ruby
 
+ROOT = Dir.pwd
+
 require 'yaml'
 require 'pry'
-require './lib/create_graph/helpers'
+require "#{ROOT}/lib/params"
+require "#{ROOT}/lib/create_graph/helpers"
 
 # PARSE ARGUMENT
-DATABASE = ARGV[0].to_sym
+database = ARGV[0].to_sym
 
 # SET GLOBAL PARAMS
-require './lib/set_params'
+PARAMS = Params.new(database).generate
 
-# READ IN GRAPH FROM CONFIG
-config_yaml = YAML.load_file('./config/graph.yml')
-TREE = config_yaml["Tree"]
-num_of_cycles = config_yaml["Cycles"]["Count"]
-CYCLES = cycle_generator(num_of_cycles, TREE.keys.last, TREE.values.last)
+####### EXECUTION
 
-# ####### EXECUTION
+File.open(FILENAME, 'w') do |file|
+  case DATABASE
+  when :Orient
+    file.write("connect #{PARAMS[:orient]} admin admin\n")
+  when :Postgres
+    file.write("\\connect tags_benchmarking\n")
+  end
+end
 
-# File.open(FILENAME, 'w') do |file|
-#   case DATABASE
-#   when :Orient
-#     file.write("connect #{ORIENT_DATABASE_PATH} admin admin\n")
-#   when :Postgres
-#     file.write("\\connect tags_benchmarking\n")
-#   end
-# end
+# Create Tree
+tree_insert_queries
 
-# # Create Tree
-# tree_insert_queries
+# Create Cycles
+cycle_insert_queries
 
-# # Create Cycles
-# cycle_insert_queries
+case DATABASE
+when :Orient
+  `#{ORIENT_BIN_PATH}/console.sh #{FILENAME}`
+when :Postgres
+  `psql -p #{POSTGRES_PORT} < #{FILENAME}`
+when :Neo4j
+  `neo4j-shell < #{FILENAME}`
+end
 
-# case DATABASE
-# when :Orient
-#   `#{ORIENT_BIN_PATH}/console.sh #{FILENAME}`
-# when :Postgres
-#   `psql -p #{POSTGRES_PORT} < #{FILENAME}`
-# when :Neo4j
-#   `neo4j-shell < #{FILENAME}`
-# end
-
-# `rm #{FILENAME}`
+`rm #{FILENAME}`

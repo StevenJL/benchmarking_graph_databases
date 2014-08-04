@@ -1,25 +1,26 @@
 #!/usr/bin/env ruby
 
+ROOT = Dir.pwd
+
 require 'yaml'
 require 'pry'
+require "#{ROOT}/lib/params"
 
-# Parse command-line argument
+# PARSE ARGUMENT
 DATABASE = ARGV[0].to_sym
 
-DROP_FIRST = ARGV.include?('drop=true')
-
 # Set Params
-require './lib/set_params'
+PARAMS = Params.new(DATABASE).generate
 
 # Commands to set up database
 setup_commands = []
-commands_filename = "#{ORIENT_BIN_PATH}/#{DATABASE}_setup_commands"
+commands_filename = "#{PARAMS[:orient_path]}/bin/#{DATABASE}_setup_commands"
 
 case DATABASE
 when :Orient
-  setup_commands << "drop database local:#{ORIENT_DATABASE_PATH} admin admin" if DROP_FIRST
-  setup_commands << "create database local:#{ORIENT_DATABASE_PATH} admin admin local"
-  setup_commands << "connect local:#{ORIENT_DATABASE_PATH} admin admin"
+  setup_commands << "drop database local:#{PARAMS[:orient_db_path]} admin admin" if ARGV.include?('drop=true')
+  setup_commands << "create database local:#{PARAMS[:orient_db_path]} admin admin local"
+  setup_commands << "connect local:#{PARAMS[:orient_db_path]} admin admin"
   setup_commands << "create class Tag extends V"
   setup_commands << "create property Tag.name string"
   setup_commands << "create property Tag.type string"
@@ -28,7 +29,7 @@ when :Postgres
 when :Neo4j
 end
 
-`touch #{commands_filename}`
+`echo '' > #{commands_filename}`
 
 File.open(commands_filename, 'a') do |file|
   setup_commands.each do |cmd|
@@ -36,6 +37,6 @@ File.open(commands_filename, 'a') do |file|
   end
 end
 
-`#{ORIENT_BIN_PATH}/console.sh < #{commands_filename}`
+`#{PARAMS[:orient_path]}/bin/console.sh < #{commands_filename}`
 
 `rm #{commands_filename}`
