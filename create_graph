@@ -5,38 +5,38 @@ ROOT = Dir.pwd
 require 'yaml'
 require 'pry'
 require "#{ROOT}/lib/params"
-require "#{ROOT}/lib/create_graph/helpers"
+require "#{ROOT}/lib/create_graph/syntaxer"
+require "#{ROOT}/lib/create_graph/command_executer"
 
-# PARSE ARGUMENT
-DATABASE = ARGV[0].to_sym
+# Generate params from argument
+params = Params.new(ARGV).generate
 
-# SET GLOBAL PARAMS
-PARAMS = Params.new(DATABASE).generate
-FILENAME = "#{PARAMS[:orient_path]}/bin/#{DATABASE}_"
+# Insert data into database
+CreateGraph::CommandExecuter.new(params).generate.execute
 
-####### EXECUTION
-File.open(FILENAME, 'w') do |file|
-  case DATABASE
-  when :Orient
-    file.write("connect local:#{PARAMS[:orient_db_path]} admin admin\n")
-  when :Postgres
-    file.write("\\connect tags_benchmarking\n")
-  end
-end
+# ####### EXECUTION
+# File.open(FILENAME, 'w') do |file|
+#   case DATABASE
+#   when :Orient
+#     file.write("connect local:#{PARAMS[:orient_db_path]} admin admin\n")
+#   when :Postgres
+#     file.write("\\connect tags_benchmarking\n")
+#   end
+# end
 
-# Create Tree
-tree_insert_queries
+# # Create Tree
+# tree_insert_queries
 
-# Create Cycles
-cycle_insert_queries
+# # Create Cycles
+# cycle_insert_queries
 
-case DATABASE
-when :Orient
-  `#{ORIENT_BIN_PATH}/console.sh #{FILENAME}`
-when :Postgres
-  `psql -p #{POSTGRES_PORT} < #{FILENAME}`
-when :Neo4j
-  `neo4j-shell < #{FILENAME}`
-end
+# case DATABASE
+# when :Orient
+#   `#{ORIENT_BIN_PATH}/console.sh #{FILENAME}`
+# when :Postgres
+#   `psql -p #{POSTGRES_PORT} < #{FILENAME}`
+# when :Neo4j
+#   `neo4j-shell < #{FILENAME}`
+# end
 
-`rm #{FILENAME}`
+# `rm #{FILENAME}`

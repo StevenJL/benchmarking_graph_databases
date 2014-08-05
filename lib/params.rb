@@ -1,7 +1,7 @@
 class Params
   # Takes a database and returns all the necessary
   # params (db shell path, port, graph structure) 
-  # in a hash.
+  # in a nice hash.
 
   attr_reader :database
 
@@ -26,7 +26,8 @@ class Params
 
     # Add tree and cycle
     output_hash[:tree] = YAML.load_file("#{ROOT}/config/graph.yml")["Tree"]
-    output_hash[:cycles] = cycle_generator(1000, output_hash[:tree].keys.last, output_hash[:tree].values.last)
+    num_of_cycles = YAML.load_file("#{ROOT}/config/graph.yml")["NumOfCycles"]["Count"]
+    output_hash[:cycles] = cycle_generator(num_of_cycles, output_hash[:tree].keys.last, output_hash[:tree].values.last)
     output_hash
   end
 
@@ -38,5 +39,5 @@ class Params
       output_hash[index] = [name_of_vertices, sub_array]
     end
     output_hash
-  end  
+  end
 end

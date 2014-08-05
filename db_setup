@@ -10,5 +10,5 @@ require "#{ROOT}/lib/db_setup/command_executer"
 # Generate params from argument
 params = Params.new(ARGV).generate
 
-# Commands to set up database
+# Set up the database
 DbSetup::CommandExecuter.new(params).generate.execute

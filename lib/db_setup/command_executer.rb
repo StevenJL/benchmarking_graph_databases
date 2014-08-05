@@ -1,6 +1,7 @@
 module DbSetup
   class CommandExecuter
     attr_reader :database, :params, :command_array, :filename
+    
     def initialize(params)
       @database = params[:database]
       @params = params
