@@ -5,38 +5,10 @@ ROOT = Dir.pwd
 require 'yaml'
 require 'pry'
 require "#{ROOT}/lib/params"
+require "#{ROOT}/lib/db_setup/command_executer"
 
-# PARSE ARGUMENT
-DATABASE = ARGV[0].to_sym
-
-# Set Params
-PARAMS = Params.new(DATABASE).generate
+# Generate params from argument
+params = Params.new(ARGV).generate
 
 # Commands to set up database
-setup_commands = []
-commands_filename = "#{PARAMS[:orient_path]}/bin/#{DATABASE}_setup_commands"
-
-case DATABASE
-when :Orient
-  setup_commands << "drop database local:#{PARAMS[:orient_db_path]} admin admin" if ARGV.include?('drop=true')
-  setup_commands << "create database local:#{PARAMS[:orient_db_path]} admin admin local"
-  setup_commands << "connect local:#{PARAMS[:orient_db_path]} admin admin"
-  setup_commands << "create class Tag extends V"
-  setup_commands << "create property Tag.name string"
-  setup_commands << "create property Tag.type string"
-  setup_commands << "exit"
-when :Postgres
-when :Neo4j
-end
-
-`echo '' > #{commands_filename}`
-
-File.open(commands_filename, 'a') do |file|
-  setup_commands.each do |cmd|
-    file.puts cmd
-  end
-end
-
-`#{PARAMS[:orient_path]}/bin/console.sh < #{commands_filename}`
-
-`rm #{commands_filename}`
+DbSetup::CommandExecuter.new(params).generate.execute

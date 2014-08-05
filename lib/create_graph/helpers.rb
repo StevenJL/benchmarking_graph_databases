@@ -1,18 +1,10 @@
-def cycle_generator(num_of_cycles, name_of_vertices, num_of_vertices)
-  output_hash = {}
-  width = (num_of_vertices/num_of_cycles.to_f).floor
-  (1..num_of_cycles).to_a.each_slice(width).to_a.each_with_index do |sub_array, index|
-    output_hash[index] = [name_of_vertices, sub_array]
-  end
-  output_hash
-end
-
 class Counter
   @@current = 0
   def self.inc
     @@current = @@current + 1
   end
 end
+
 
 def create_vertex(klass, name, type, options={})
   case DATABASE

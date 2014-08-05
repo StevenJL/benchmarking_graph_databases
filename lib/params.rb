@@ -1,26 +1,27 @@
 class Params
-  # Takes a database and returns all the relevant 
-  # benchmarking params (db shell path, port, graph structure) 
+  # Takes a database and returns all the necessary
+  # params (db shell path, port, graph structure) 
   # in a hash.
 
   attr_reader :database
 
-  def initialize(database)
-    @database = database
+  def initialize(arg_array)
+    raise "Please specify database" if arg_array.empty?
+    @database = arg_array[0].to_sym
   end
 
   def generate
-    output_hash = {}
+    output_hash = {:database => database}
     case database
     when :Orient
       orient_config_yaml = YAML.load_file("#{ROOT}/config/orient.yml")
       output_hash[:orient_path] = orient_config_yaml["path"]
-      output_hash[:orient_db_path] = "#{orient_config_yaml['path']}/databases/#{orient_config_yaml['databasename']}"
+      output_hash[:orient_db_path] = "#{orient_config_yaml['path']}/databases/#{orient_config_yaml['database_name']}"
+      output_hash[:setup_model] = orient_config_yaml["setup_model"]
     when :Postgres
       postgres_config_yaml = YAML.load_file("#{ROOT}/config/postgres.yml")
       output_hash[:postgres_port] = postgres_config_yaml['port']
     when :Neo4j
-
     end
 
     # Add tree and cycle

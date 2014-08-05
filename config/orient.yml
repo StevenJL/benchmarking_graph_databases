@@ -1,2 +1,7 @@
 path: '/Users/stevenli/releases/orientdb'
-databasename: 'tags'
+database_name: 'tags'
+setup_model:
+  - create class Tag extends V
+  - create property Tag.name string
+  - create property Tag.type string
+  - exit
